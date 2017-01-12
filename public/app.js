@@ -1,13 +1,44 @@
 
 const TimersDashboard = React.createClass({
+	handleCreateFormSubmit: function(timer) {
+		this.createTimer(timer);
+	},
+	
+	createTimer: function(timer) {
+		const t = helpers.newTimer(timer);
+		this.setState({
+			timers: this.state.timers.concat(t)
+		});
+	},
+
+	getInitialState: function() {
+		return ({
+			timers: [
+				{
+					title: 'Practice squat',
+					project: 'Gym Chores',
+					id: uuid.v4(),
+					elapsed: 5456099,
+					runningSince: Date.now()
+				},
+				{
+					title: 'Bake squash',
+					project: 'Kitchen Chores',
+					id: uuid.v4(),
+					elapsed: 1273998,
+					runningSince: null
+				}
+			]
+		});
+	},
 
 	render: function() {
 
 		return (
 			<div className='ui three column centered grid'>
 				<div className='column'>
-					<EditableTimerList />
-					<ToggleTimerForm isOpen={false} />
+					<EditableTimerList timers={this.state.timers} />
+					<ToggleTimerForm onFormSubmit={this.handleCreateFormSubmit} />
 				</div>
 			</div>
 		);
@@ -15,17 +46,38 @@ const TimersDashboard = React.createClass({
 });
 
 const ToggleTimerForm = React.createClass({
+	getInitialState: function() {
+		return({
+			isOpen: false
+		});
+	},
+
+	handleFormSubmit: function(timer) {
+		this.props.onFormSubmit(timer);
+		this.setState({ isOpen: false })
+	},
+
+	handleFormClose: function() {
+		this.setState({ isOpen: false });
+	},
+
+	handleFormOpen: function() {
+		this.setState({ isOpen: true });
+	},
+
 	render: function() {
-		if(this.props.isOpen) {
+		if(this.state.isOpen) {
 			return (
-				<TimerForm />
+				<TimerForm 
+				onFormSubmit={this.handleFormSubmit}
+				onFormClose={this.handleFormClose} />
 			);
 		} else {
 			return (
 				<div className='ui basic content center aligned segment'>
-					<div className='ui basic button icon'>
+					<button className='ui basic button icon' onClick={this.handleFormOpen}>
 						<i className='plus icon'></i>
-					</div>
+					</button>
 				</div>
 			);
 		}
@@ -35,31 +87,33 @@ const ToggleTimerForm = React.createClass({
 const EditableTimerList = React.createClass({
 
 	render: function() {
+		const timers = this.props.timers.map((timer) => (
+			<EditableTimer
+			key={timer.id} 
+			id={timer.id}
+			title={timer.title}
+			project={timer.project}
+			elapsed={timer.elapsed}
+			runningSince={timer.runningSince} />
+		));
 
 		return (
 			<div id='timers'>
-				<EditableTimer 
-				title='Learn React' 
-				project='Web Domination' 
-				elapsed='8986300' 
-				runningSince={null} 
-				editFormOpen={false} />
-
-				<EditableTimer
-				title='Learn Angular'
-				project='World Domination'
-				elapsed='3890385'
-				runningSince={null}
-				editFormOpen={true} />
+				{timers}
 			</div>
 		);
 	}
 });
 
 const EditableTimer = React.createClass({
+	getInitialState: function() {
+		return ({
+			editFormOpen: false
+		});
+	},
 
 	render: function() {
-		if(this.props.editFormOpen) {
+		if(this.state.editFormOpen) {
 			return (
 				<TimerForm 
 				title={this.props.title} 
@@ -78,6 +132,13 @@ const EditableTimer = React.createClass({
 });
 
 const TimerForm = React.createClass({
+	handleSubmit: function() {
+		this.props.onFormSubmit({
+			id: this.props.id,
+			title: this.refs.title.value,
+			project: this.refs.project.value
+		});
+	},
 
 	render: function(){
 		const submitText = this.props.title ? 'Update' : 'Create';
@@ -88,17 +149,17 @@ const TimerForm = React.createClass({
 					<div className='ui form'>
 						<div className='field'>
 							<label>Title</label>
-							<input type='text' defaultValue={this.props.title} />
+							<input type='text' ref='title' defaultValue={this.props.title} />
 						</div>
 						<div className='field'>
 							<label>Project</label>
-							<input type='text' defaultValue={this.props.project} />
+							<input type='text' ref='project' defaultValue={this.props.project} />
 						</div>
 						<div className='ui two button attached buttons'>
-							<button className='ui basic blue button'>
+							<button className='ui basic blue button' onClick={this.handleSubmit}>
 								{submitText}
 							</button>
-							<button className='ui basic red button'>
+							<button className='ui basic red button' onClick={this.props.onFormClose}>
 								Cancel
 							</button>
 						</div>
